@@ -1,0 +1,3 @@
+---
+# If Helm (i.e. https://ghe.service.group/CAAS/sharded-ingress/tree/helm-chart/chart) is prefered, then use the Ansible Helm module:
+# https://docs.ansible.com/ansible/latest/collections/kubernetes/core/helm_module.html

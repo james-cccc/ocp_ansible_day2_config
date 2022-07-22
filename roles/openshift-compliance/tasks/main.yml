@@ -1,0 +1,7 @@
+---
+
+- name: Install OpenShift Compliance Operator
+  include_tasks: compliance_operator.yml
+
+- name: Setup OpenShift Compliance
+  include_tasks: compliance_configuration.yml

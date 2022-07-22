@@ -1,0 +1,28 @@
+---
+
+- name: Ensure integrity scanning is enabled on all nodes
+  kubernetes.core.k8s:
+    state: present
+    api_version: fileintegrity.openshift.io/v1alpha1
+    kind: FileIntegrity
+    merge_type:
+      - strategic-merge
+      - merge
+    definition:
+      metadata:
+        name: nodes-fileintegrity
+        namespace: openshift-file-integrity
+      spec:
+        config:
+          gracePeriod: 3600
+
+- name: Wait for an AIDE database to initialize for each node
+  kubernetes.core.k8s_info:
+    api_version: fileintegrity.openshift.io/v1alpha1
+    kind: FileIntegrity
+    name: nodes-fileintegrity
+    namespace: openshift-file-integrity
+  register: FILEINTEGRITY_STATUS
+  until: "'Active' in FILEINTEGRITY_STATUS | json_query('resources[].status.phase | []')"
+  retries: 90
+  delay: 90

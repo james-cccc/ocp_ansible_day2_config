@@ -1,0 +1,37 @@
+---
+
+- name: etcd encryption
+  block:
+
+    - name: Ensure etcd is encrypted
+      kubernetes.core.k8s:
+        state: present
+        merge_type:
+          - strategic-merge
+          - merge
+        kind: APIServer
+        name: cluster
+        definition:
+          spec:
+            encryption:
+              type: aescbc
+
+    - name: Wait for OpenShift API server encryption to complete
+      kubernetes.core.k8s_info:
+        api_version: v1
+        kind: OpenShiftAPIServer
+        name: cluster
+      register: OPENSHIFT_ENCRYPTION_STATUS
+      until: "'EncryptionCompleted' in OPENSHIFT_ENCRYPTION_STATUS | json_query('resources[].status.conditions[?type==`Encrypted`].reason | []')"
+      retries: 90
+      delay: 90
+
+    - name: Wait for Kubernetes API server encryption to complete
+      kubernetes.core.k8s_info:
+        api_version: v1
+        kind: KubeAPIServer
+        name: cluster
+      register: KUBE_ENCRYPTION_STATUS
+      until: "'EncryptionCompleted' in KUBE_ENCRYPTION_STATUS | json_query('resources[].status.conditions[?type==`Encrypted`].reason | []')"
+      retries: 90
+      delay: 90

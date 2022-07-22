@@ -1,0 +1,12 @@
+---
+
+- name: Configure alertmanager
+  kubernetes.core.k8s:
+    state: present
+    kind: Secret
+    name: alertmanager-main
+    namespace: openshift-monitoring
+    definition:
+      data:
+        alertmanager.yaml: "{{ lookup('template', './alertmanager.yml.j2', rstrip=False) | b64encode }}"
+      type: Opaque

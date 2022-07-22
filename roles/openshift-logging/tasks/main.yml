@@ -1,0 +1,10 @@
+---
+
+- name: Install OpenShift Logging
+  include_tasks: cluster_logging_operators.yml
+
+- name: Setup Cluster Logging Instance
+  include_tasks: cluster_logging_instance.yml
+
+- name: Setup Log Forwarding
+  include_tasks: cluster_log_forwarder.yml

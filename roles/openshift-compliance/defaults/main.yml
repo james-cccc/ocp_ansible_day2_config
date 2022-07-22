@@ -1,0 +1,5 @@
+---
+catalog_source: redhat-operator-index
+compliance_channel: release-0.1
+compliance_storage_class: ocs-storagecluster-cephfs
+compliance_scan_schedule: 0 1 * * *

@@ -1,0 +1,179 @@
+---
+
+- name: Namespace for elasticsearch
+  kubernetes.core.k8s:
+    state: present
+    api_version: v1
+    kind: Namespace
+    merge_type:
+      - strategic-merge
+      - merge
+    definition:
+      metadata:
+        name: openshift-operators-redhat
+        annotations:
+          openshift.io/node-selector: ""
+        labels:
+          openshift.io/cluster-monitoring: "true"
+
+- name: Namespace for cluster logging
+  kubernetes.core.k8s:
+    state: present
+    api_version: v1
+    kind: Namespace
+    merge_type:
+      - strategic-merge
+      - merge
+    definition:
+      metadata:
+        name: openshift-logging
+        annotations:
+          openshift.io/node-selector: ""
+        labels:
+          openshift.io/cluster-monitoring: "true"
+
+- name: Operator Group for elasticsearch
+  kubernetes.core.k8s:
+    state: present
+    api_version: operators.coreos.com/v1
+    kind: OperatorGroup
+    namespace: openshift-operators-redhat
+    merge_type:
+      - strategic-merge
+      - merge
+    definition:
+      metadata:
+        name: openshift-operators-redhat
+      spec: {}
+
+- name: Subscription for elasticsearch
+  kubernetes.core.k8s:
+    state: present
+    api_version: operators.coreos.com/v1alpha1
+    kind: Subscription
+    name: elasticsearch-operator
+    namespace: openshift-operators-redhat
+    merge_type:
+      - strategic-merge
+      - merge
+    definition:
+      spec:
+        channel: "{{ logging_channel }}"
+        installPlanApproval: Automatic
+        name: elasticsearch-operator
+        source: "{{ catalog_source }}"
+        sourceNamespace: openshift-marketplace
+
+- name: Operator Group for cluster logging
+  kubernetes.core.k8s:
+    state: present
+    api_version: operators.coreos.com/v1
+    kind: OperatorGroup
+    namespace: openshift-logging
+    merge_type:
+      - strategic-merge
+      - merge
+    definition:
+      metadata:
+        name: openshift-logging
+      spec:
+        targetNamespaces:
+        - openshift-logging
+
+- name: Verify Operatorgroup for cluster logging is created
+  kubernetes.core.k8s_info:
+    kind: OperatorGroup
+    namespace: openshift-logging
+    name: openshift-logging
+  register: CLO_OG_STATUS
+  until: "CLO_OG_STATUS.failed == false"
+  retries: 12
+  delay: 10
+
+- name: Subscription for cluster logging
+  kubernetes.core.k8s:
+    state: present
+    api_version: operators.coreos.com/v1alpha1
+    kind: Subscription
+    name: cluster-logging
+    namespace: openshift-logging
+    merge_type:
+      - strategic-merge
+      - merge
+    definition:
+      spec:
+        channel: "{{ logging_channel }}"
+        installPlanApproval: Automatic
+        name: cluster-logging
+        source: "{{ catalog_source }}"
+        sourceNamespace: openshift-marketplace
+
+- name: Verify Elasticseach installed
+  block:
+
+    - name: Verify Elasticseach subscription existence
+      kubernetes.core.k8s_info:
+        kind: Subscription
+        name: elasticsearch-operator
+        namespace: openshift-operators-redhat
+      register: ES_SUB_EXISTENCE
+      until: "ES_SUB_EXISTENCE.failed == false"
+      retries: 12
+      delay: 10
+
+    - name: Get Elasticseach subscription
+      kubernetes.core.k8s_info:
+        api_version: operators.coreos.com/v1alpha1
+        kind: Subscription
+        name: elasticsearch-operator
+        namespace: openshift-operators-redhat
+      register: ES_SUB_STATUS
+      until: ES_SUB_STATUS.resources[0].status.installedCSV is defined
+      retries: 12
+      delay: 10
+
+    - name: Wait for Elasticseach Operator to Install
+      kubernetes.core.k8s_info:
+        api_version: operators.coreos.com/v1alpha1
+        kind: ClusterServiceVersion
+        namespace: openshift-operators-redhat
+        name: "{{ ES_SUB_STATUS.resources[0].status.installedCSV }}"
+      register: ES_STATUS
+      until: "'InstallSucceeded' in ES_STATUS | json_query('resources[].status.reason | []')"
+      retries: 10
+      delay: 10
+
+- name: Verify ClusterLogging installed
+  block:
+
+    - name: Verify cluster logging operator exists
+      kubernetes.core.k8s_info:
+        kind: Subscription
+        namespace: openshift-logging
+        name: cluster-logging
+      register: CLO_SUB_EXISTENCE
+      until: "CLO_SUB_EXISTENCE.failed == false"
+      retries: 12
+      delay: 10
+
+    - name: Get CLO Sub
+      kubernetes.core.k8s_info:
+        api_version: operators.coreos.com/v1alpha1
+        kind: Subscription
+        name: cluster-logging
+        namespace: openshift-logging
+      register: CLO_SUB_STATUS
+      until: CLO_SUB_STATUS.resources[0].status.installedCSV is defined
+      retries: 12
+      delay: 10
+
+    - name: Wait for CLO Operator to Install
+      kubernetes.core.k8s_info:
+        api_version: operators.coreos.com/v1alpha1
+        kind: ClusterServiceVersion
+        namespace: openshift-logging
+        name: "{{ CLO_SUB_STATUS.resources[0].status.installedCSV }}"
+      register: CLO_STATUS
+      until: "'InstallSucceeded' in CLO_STATUS | json_query('resources[].status.reason | []')"
+      retries: 12
+      delay: 60

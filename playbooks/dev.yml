@@ -1,0 +1,20 @@
+---
+- name: Dev OpenShift Cluster Configuration
+  hosts: localhost
+  vars_files:
+    - ../vars/dev.yml
+    - ../vars/vault_dev.yml
+  collections:
+    - kubernetes.core
+  module_defaults:
+    group/k8s:
+      host: "https://api.{{ cluster_name }}.{{ domain }}:6443"
+      kubeconfig: "{{ installation_directory }}/auth/kubeconfig"
+      ca_cert: /etc/ssl/certs/ocp_dev_ca.pem
+  roles:
+    - openshift-logging
+    - openshift-monitoring
+    - openshift-etcd
+    - openshift-service-mesh
+    - openshift-compliance
+    - openshift-file-integrity

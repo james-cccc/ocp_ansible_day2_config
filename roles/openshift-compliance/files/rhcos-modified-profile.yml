@@ -1,0 +1,28 @@
+apiVersion: compliance.openshift.io/v1alpha1
+kind: TailoredProfile
+metadata:
+  name: rhcos4-profile
+  namespace: openshift-compliance
+spec:
+  extends: rhcos4-moderate
+  title: Modified NIST moderate profile
+  description: Modified NIST moderate profile
+  disableRules:
+   - name: rhcos4-package-usbguard-installed
+     rationale: Not needed as VMs don't have USB
+   - name: rhcos4-service-usbguard-enabled
+     rationale: Not needed as VMs don't have USB
+   - name: rhcos4-configure-usbguard-auditbackend
+     rationale: Not needed as VMs don't have USB
+   - name: rhcos4-bios-disable-usb-boot
+     rationale: Not needed as VMs don't have USB
+   - name: rhcos4-usbguard-allow-hid-and-hub
+     rationale: Not needed as VMs don't have USB
+   - name: rhcos4-enable-fips-mode
+     rationale: FIPs not required
+   - name: rhcos4-configure-crypto-policy
+     rationale: FIPs not required
+   - name: rhcos4-selinux-confinement-of-daemons
+     rationale: FIPs not required
+   - name: rhcos4-wireless-disable-in-bios
+     rationale: Not needed as VMs don't have WiFi

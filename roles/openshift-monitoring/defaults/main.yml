@@ -1,0 +1,3 @@
+---
+monitoring_storage_class: localstorage
+alertmanager_reciever: http://example.com/probe/webhook/prometheus

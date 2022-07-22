@@ -1,0 +1,7 @@
+---
+
+- name: Install OpenShift File Integrity Operator
+  include_tasks: file_integrity_operator.yml
+
+- name: Setup OpenShift File Integrity Scanning
+  include_tasks: file_integrity_configuration.yml

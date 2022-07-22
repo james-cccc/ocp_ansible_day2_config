@@ -1,0 +1,5 @@
+---
+elasticsearch_channel: stable
+clusterlogging_channel: stable
+catalog_source: redhat-operator-index
+logging_storage_class: localstorage

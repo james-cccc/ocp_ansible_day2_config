@@ -1,0 +1,7 @@
+---
+
+- name: Configure Cluster Monitoring
+  include_tasks: monitoring_configuration.yml
+
+- name: Configure Alertmanager
+  include_tasks: alertmanager_configuration.yml

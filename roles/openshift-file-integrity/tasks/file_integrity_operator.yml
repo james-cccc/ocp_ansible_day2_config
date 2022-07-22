@@ -1,0 +1,57 @@
+---
+
+- name: Ensure namespace existance for the File Integrity Operator
+  kubernetes.core.k8s:
+    state: present
+    api_version: v1
+    kind: Namespace
+    merge_type:
+      - strategic-merge
+      - merge
+    definition:
+      metadata:
+        name: openshift-file-integrity
+
+- name: Ensure Operator Group existance for the File Integrity Operator
+  kubernetes.core.k8s:
+    state: present
+    api_version: operators.coreos.com/v1
+    kind: OperatorGroup
+    namespace: openshift-file-integrity
+    merge_type:
+      - strategic-merge
+      - merge
+    definition:
+      metadata:
+        name: file-integrity-operator
+      spec:
+        targetNamespaces:
+        - openshift-file-integrity
+
+- name: Ensure subscription existance for the File Integrity Operator
+  kubernetes.core.k8s:
+    state: present
+    api_version: operators.coreos.com/v1alpha1
+    kind: Subscription
+    merge_type:
+      - strategic-merge
+      - merge
+    definition:
+      metadata:
+        name: file-integrity-operator
+        namespace: openshift-file-integrity
+      spec:
+        channel: '{{ file_integrity_channel }}'
+        installPlanApproval: Automatic
+        name: file-integrity-operator
+        source: "{{ catalog_source }}"
+        sourceNamespace: openshift-marketplace
+
+- name: Wait till the Operator is created
+  kubernetes.core.k8s_info:
+    kind: Operator
+    api_version: operators.coreos.com/v1
+    wait: true
+    name: file-integrity-operator.openshift-file-integrity
+    wait_sleep: 10
+    wait_timeout: 360

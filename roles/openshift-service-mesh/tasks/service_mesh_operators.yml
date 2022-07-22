@@ -1,0 +1,99 @@
+---
+
+- name: "Service Mesh Control Plane Namespace {{ item }}"
+  kubernetes.core.k8s:
+    state: present
+    api_version: v1
+    kind: Namespace
+    merge_type:
+      - strategic-merge
+      - merge
+    name: "{{ item }}"
+    definition:
+      metadata:
+        labels:
+          openshift.io/cluster-monitoring: "true"
+        annotations:
+          openshift.io/node-selector: node-role.kubernetes.io/infra=
+  loop:
+    - istio-system
+    - openshift-distributed-tracing
+
+- name: Operator Group for ElasticSearch
+  kubernetes.core.k8s:
+    state: present
+    api_version: operators.coreos.com/v1
+    kind: OperatorGroup
+    name: openshift-distributed-tracing-operator-group
+    namespace: openshift-distributed-tracing
+    merge_type:
+      - strategic-merge
+      - merge
+    definition:
+      spec: {}
+
+- name: "Subscription for the Kiali Operator"
+  kubernetes.core.k8s:
+      state: present
+      wait: true
+      api_version: operators.coreos.com/v1alpha1
+      kind: Subscription
+      merge_type:
+        - strategic-merge
+        - merge
+      definition:
+        metadata:
+          name: kiali-ossm
+          namespace: openshift-operators
+          labels:
+            operators.coreos.com/kiali-ossm.openshift-operators: ""
+        spec:
+          channel: stable
+          installPlanApproval: Manual
+          name: kiali-ossm
+          source: "{{ catalog_source }}"
+          sourceNamespace: openshift-marketplace
+
+- name: "Subscription for the Jaeger Operator"
+  kubernetes.core.k8s:
+      state: present
+      wait: true
+      api_version: operators.coreos.com/v1alpha1
+      kind: Subscription
+      merge_type:
+        - strategic-merge
+        - merge
+      definition:
+        metadata:
+          name: jaeger-product
+          namespace: openshift-distributed-tracing
+          labels:
+            operators.coreos.com/jaeger-product.openshift-distributed-tracing: ""
+        spec:
+          channel: stable
+          installPlanApproval: Manual
+          name: jaeger-product
+          source: "{{ catalog_source }}"
+          sourceNamespace: openshift-marketplace
+
+- name: "Subscription for the Service Mesh Operator"
+  kubernetes.core.k8s:
+      state: present
+      wait: true
+      api_version: operators.coreos.com/v1alpha1
+      kind: Subscription
+      merge_type:
+        - strategic-merge
+        - merge
+      definition:
+        metadata:
+          name: servicemeshoperator
+          namespace: openshift-operators
+          labels:
+            operators.coreos.com/servicemeshoperator.openshift-operators: ""
+        spec:
+          channel: stable
+          installPlanApproval: Manual
+          name: servicemeshoperator
+          source: "{{ catalog_source }}"
+          sourceNamespace: openshift-marketplace

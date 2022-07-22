@@ -1,0 +1,35 @@
+---
+
+- name: Deploy Log Forwarder
+  kubernetes.core.k8s:
+    state: present
+    api_version: logging.openshift.io/v1
+    kind: ClusterLogForwarder
+    name: "instance"
+    namespace: "openshift-logging"
+    merge_type:
+      - strategic-merge
+      - merge
+    definition:
+      spec:
+        outputs:
+          - name: fluentd-server-insecure
+            type: fluentdForward
+            url: 'tcp://'
+        pipelines:
+          - name: to-elastic
+            inputRefs:
+              - application
+              - infrastructure
+              - audit
+            outputRefs:
+              - default
+          - name: to-vrlic
+            inputRefs:
+              - application
+              - audit
+            outputRefs:
+              - fluentd-server-insecure
+            labels:
+              logs: application
+              clusterId: "{{ cluster_name }}"

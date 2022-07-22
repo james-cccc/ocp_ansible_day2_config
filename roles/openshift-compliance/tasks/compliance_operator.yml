@@ -1,0 +1,50 @@
+---
+
+- name: Ensure namespace existence for the Compliance Operator
+  kubernetes.core.k8s:
+    state: present
+    api_version: v1
+    kind: Namespace
+    merge_type:
+      - strategic-merge
+      - merge
+    definition:
+      metadata:
+        name: openshift-compliance
+        labels:
+          openshift.io/cluster-monitoring: "true"  
+
+- name: Ensure Operator Group existence for the Compliance Operator
+  kubernetes.core.k8s:
+    state: present
+    api_version: operators.coreos.com/v1
+    kind: OperatorGroup
+    merge_type:
+      - strategic-merge
+      - merge
+    definition:
+      metadata:
+        name: compliance-operator
+        namespace: openshift-compliance
+      spec:
+        targetNamespaces:
+        - openshift-compliance
+
+- name: Ensure subscription existence for the Compliance Operator
+  kubernetes.core.k8s:
+    state: present
+    api_version: operators.coreos.com/v1alpha1
+    kind: Subscription
+    merge_type:
+      - strategic-merge
+      - merge
+    definition:
+      metadata:
+        name: compliance-operator-sub
+        namespace: openshift-compliance
+      spec:
+        channel: '{{ compliance_channel }}'
+        installPlanApproval: Automatic
+        name: compliance-operator
+        source: "{{ catalog_source }}"
+        sourceNamespace: openshift-marketplace

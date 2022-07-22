@@ -1,0 +1,4 @@
+---
+
+- name: Encrypt etcd
+  include_tasks: etcd_encryption.yml

@@ -1,0 +1,15 @@
+---
+
+# Cluster Details:
+domain: example.com
+cluster_name: dev
+
+# Bastion Resources:
+installation_directory: /home/openshift/dev
+
+# OpenShift Logging
+elasticsearch_channel: stable
+clusterlogging_channel: stable
+
+# OLM
+catalog_source: redhat-operator-index

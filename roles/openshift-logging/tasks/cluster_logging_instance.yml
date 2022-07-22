@@ -1,0 +1,69 @@
+---
+
+- name: Deploy ClusterLogging
+  kubernetes.core.k8s:
+    state: present
+    api_version: logging.openshift.io/v1
+    kind: ClusterLogging
+    name: "instance"
+    namespace: "openshift-logging"
+    merge_type:
+      - strategic-merge
+      - merge
+    definition:
+      metadata:
+        labels:
+          app: efk
+      spec:
+        managementState: Managed
+        logStore:
+          type: elasticsearch
+          elasticsearch:
+            nodeCount: 3
+            storage:
+              storageClassName: "{{ logging_storage_class }}"
+              size: 500Gi
+              volumeMode: Filesystem
+              fsType: xfs
+            nodeSelector:
+              node-role.kubernetes.io/infra: ""
+            resources:
+              limits:
+                memory: 8Gi
+              requests:
+                memory: 8Gi
+                cpu: 500m
+          retentionPolicy:
+            application:
+              maxAge: 30d
+            infra:
+              maxAge: 30d
+            audit:
+              maxAge: 30d
+            proxy:
+              resources:
+                limits:
+                  memory: 256Mi
+                requests:
+                  memory: 256Mi
+            redundancyPolicy: "FullRedundancy"
+        visualization:
+          type: kibana
+          kibana:
+            replicas: 2
+            nodeSelector:
+              node-role.kubernetes.io/infra: ""
+        curation:
+          type: curator
+          curator:
+            schedule: 30 3 * * *
+        collection:
+          logs:
+            type: fluentd
+            fluentd:
+              resources:
+                limits:
+                  memory: 2Gi
+                requests:
+                  cpu: 200m
+                  memory: 1Gi

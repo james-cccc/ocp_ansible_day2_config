@@ -1,0 +1,14 @@
+apiVersion: compliance.openshift.io/v1alpha1
+kind: TailoredProfile
+metadata:
+  name: ocp4-profile
+  namespace: openshift-compliance
+spec:
+  extends: ocp4-moderate
+  title: Modified NIST moderate profile
+  description: Modified NIST moderate profile
+  disableRules:
+   - name: ocp4-classification-banner
+     rationale: No currnet plans to modify the web console
+   - name: ocp4-ocp-idp-no-htpasswd
+     rationale: htpasswd used for clusteradmin account

@@ -1,0 +1,110 @@
+---
+
+- name: Define default scan settings
+  kubernetes.core.k8s:
+    state: present
+    api_version: compliance.openshift.io/v1alpha1
+    kind: ScanSetting
+    merge_type:
+      - strategic-merge
+      - merge
+    definition:
+      metadata:
+        name: default
+        namespace: openshift-compliance
+      rawResultStorage:
+        pvAccessModes:
+          - ReadWriteOnce
+        Rotation: 3
+        Size: 1Gi
+        storageClassName: "{{ compliance_storage_class }}"
+      roles:
+        - worker
+        - master
+      scanTolerations:
+        - effect:    NoSchedule
+          key:       node-role.kubernetes.io/master
+          operator:  Exists
+        - effect:    NoSchedule
+          key:       infra
+          operator:  Equal
+          value:     reserved
+        - effect:    NoExecute
+          key:       infra
+          operator:  Equal
+          value:     reserved
+      schedule: "{{ compliance_scan_schedule }}"
+
+- name: Define auto apply scan settings
+  kubernetes.core.k8s:
+    state: present
+    api_version: compliance.openshift.io/v1alpha1
+    kind: ScanSetting
+    merge_type:
+      - strategic-merge
+      - merge
+    definition:
+      metadata:
+        name: default-auto-apply
+        namespace: openshift-compliance
+      autoUpdateRemediations: true
+      autoApplyRemediations: true
+      rawResultStorage:
+        pvAccessModes:
+          - ReadWriteOnce
+        Rotation: 3
+        Size: 1Gi
+        storageClassName: "{{ compliance_storage_class }}"
+      roles:
+        - worker
+        - master
+      scanTolerations:
+        - effect:    NoSchedule
+          key:       node-role.kubernetes.io/master
+          operator:  Exists
+        - effect:    NoSchedule
+          key:       infra
+          operator:  Equal
+          value:     reserved
+        - effect:    NoExecute
+          key:       infra
+          operator:  Equal
+          value:     reserved
+      schedule: "{{ compliance_scan_schedule }}"
+
+- name: Compliance Profiles
+  block:
+
+    - name: Apply compliance OCP cluster profile
+      kubernetes.core.k8s:
+        state: present
+        src: ocp4-modified-profile.yml
+
+    - name: Apply compliance RHCOS profile
+      kubernetes.core.k8s:
+        state: present
+        src: rhcos-modified-profile.yml
+
+- name: Ensure the binding exists to scan the cluster using the profiles
+  kubernetes.core.k8s:
+    state: present
+    api_version: compliance.openshift.io/v1alpha1
+    kind: ScanSettingBinding
+    merge_type:
+      - strategic-merge
+      - merge
+    definition:
+      metadata:
+        name: compliance-requirements
+        namespace: openshift-compliance
+      profiles:
+      - apiGroup: compliance.openshift.io/v1alpha1
+        kind: TailoredProfile
+        name: rhcos4-profile
+      - apiGroup: compliance.openshift.io/v1alpha1
+        kind: TailoredProfile
+        name: ocp4-profile
+      settingsRef:
+        apiGroup: compliance.openshift.io/v1alpha1
+        kind: ScanSetting
+        name: default
